@@ -176,6 +176,8 @@ EOF
 
 The operator will create parent-owned lifecycle task Jobs to perform database migration and initialization, then create the web server Deployment, Service, and ConfigMap. Check task status with `kubectl describe superset my-superset`.
 
+The official lean Superset image (e.g. `6.1.0`) has no database drivers. Set `image` to a build that includes the driver for your connection URI, such as `psycopg2` for `postgresql+psycopg2`. See [Metastore](configuration.md#metastore) for driver details.
+
 ## 4. Watch it come up
 
 ```bash
@@ -188,6 +190,8 @@ kubectl get jobs -l superset.apache.org/init-task -w
 # Watch all pods
 kubectl get pods -w
 ```
+
+`sup` is the short name for the `Superset` resource, so `kubectl get sup` works the same as `kubectl get superset`. Short names are not unique across CRDs: if another CRD in the cluster also registers `sup`, kubectl resolves it to only one of them. In that case, use `superset` or the fully qualified `supersets.superset.apache.org` instead.
 
 ## 5. Access Superset
 
