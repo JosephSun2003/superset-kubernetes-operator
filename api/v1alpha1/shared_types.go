@@ -200,6 +200,80 @@ type MetastoreSpec struct {
 	CreateDatabase *bool `json:"createDatabase,omitempty"`
 }
 
+// --- Shared connection and reference types (SupersetDatabase/SupersetDataset) ---
+
+// ConnectionSpec is an extract of the following fields from Metastore: Host,
+// Port, Username, Password and corresponding secret refs.
+type ConnectionSpec struct {
+	// The database hostname.
+	// +optional
+	// +kubebuilder:validation:MinLength=1
+	Host *string `json:"host,omitempty"`
+
+	// Reference to a Secret key containing the database hostname.
+	// Mutually exclusive with Host.
+	// +optional
+	HostFrom *corev1.SecretKeySelector `json:"hostFrom,omitempty"`
+
+	// Database port, defaults per type (5432 for PostgreSQL, 3306 for MySQL) 
+	// when Port and PortFrom are unset.
+	// +optional
+	Port *int32 `json:"port,omitempty"`
+
+	// Reference to a Secret key containing the database port as a decimal string.
+	// Mutually exclusive with Port.
+	// +optional
+	PortFrom *corev1.SecretKeySelector `json:"portFrom,omitempty"`
+
+	// The database name to connect to.
+	// +optional
+	// +kubebuilder:validation:MinLength=1
+	Database *string `json:"database,omitempty"`
+
+	// Reference to a Secret key containing the database name.
+	// Mutually exclusive with Database.
+	// +optional
+	DatabaseFrom *corev1.SecretKeySelector `json:"databaseFrom,omitempty"`
+
+	// The database username.
+	// +optional
+	// +kubebuilder:validation:MinLength=1
+	Username *string `json:"username,omitempty"`
+
+	// Reference to a Secret key containing the database username.
+	// Mutually exclusive with Username.
+	// +optional
+	UsernameFrom *corev1.SecretKeySelector `json:"usernameFrom,omitempty"`
+
+	// The database password. In Staging or Production, CRD validation rejects plain
+	// text passwords — use passwordFrom to reference a Kubernetes Secret.
+	// +optional
+	Password *string `json:"password,omitempty"`
+
+	// Reference to a Secret key containing the database password.
+	// Mutually exclusive with Password.
+	// +optional
+	PasswordFrom *corev1.SecretKeySelector `json:"passwordFrom,omitempty"`
+}
+
+// SupersetRef references a Superset resource in the same namespace
+type SupersetRef struct {
+	// Name of the target Superset CR.
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+}
+
+// DeletionPolicyEnum controls deletion behavior (Retain or Delete).
+type DeletionPolicyEnum int
+
+const (
+	// Retain leaves the Superset-side object untouched when the CR is deleted.
+	Retain DeletionPolicyEnum = iota
+
+	// Delete removes the Superset-side object when the CR is deleted.
+	Delete
+)
+
 // --- Valkey cache configuration ---
 
 // ValkeySpec configures Valkey as the shared cache backend, Celery message
