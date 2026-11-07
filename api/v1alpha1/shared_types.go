@@ -104,15 +104,8 @@ type ContainerImageSpec struct {
 // Either a URI (passthrough) or structured fields (host, database, etc.) can be used.
 // They are mutually exclusive.
 // +kubebuilder:validation:XValidation:rule="!(has(self.uri) && has(self.uriFrom))",message="uri and uriFrom are mutually exclusive"
-// +kubebuilder:validation:XValidation:rule="!(has(self.host) && has(self.hostFrom))",message="host and hostFrom are mutually exclusive"
-// +kubebuilder:validation:XValidation:rule="!(has(self.port) && has(self.portFrom))",message="port and portFrom are mutually exclusive"
-// +kubebuilder:validation:XValidation:rule="!(has(self.database) && has(self.databaseFrom))",message="database and databaseFrom are mutually exclusive"
-// +kubebuilder:validation:XValidation:rule="!(has(self.username) && has(self.usernameFrom))",message="username and usernameFrom are mutually exclusive"
-// +kubebuilder:validation:XValidation:rule="!(has(self.password) && has(self.passwordFrom))",message="password and passwordFrom are mutually exclusive"
 // +kubebuilder:validation:XValidation:rule="!(has(self.uri) && (has(self.host) || has(self.hostFrom) || has(self.database) || has(self.databaseFrom) || has(self.username) || has(self.usernameFrom) || has(self.password) || has(self.passwordFrom) || has(self.port) || has(self.portFrom) || has(self.driver)))",message="uri and structured fields are mutually exclusive"
 // +kubebuilder:validation:XValidation:rule="!(has(self.uriFrom) && (has(self.host) || has(self.hostFrom) || has(self.database) || has(self.databaseFrom) || has(self.username) || has(self.usernameFrom) || has(self.password) || has(self.passwordFrom) || has(self.port) || has(self.portFrom) || has(self.driver)))",message="uriFrom and structured fields are mutually exclusive"
-// +kubebuilder:validation:XValidation:rule="!((has(self.database) || has(self.databaseFrom) || has(self.username) || has(self.usernameFrom) || has(self.password) || has(self.passwordFrom) || has(self.port) || has(self.portFrom) || has(self.driver)) && !(has(self.host) || has(self.hostFrom)))",message="structured fields require host or hostFrom to be set"
-// +kubebuilder:validation:XValidation:rule="!(has(self.host) || has(self.hostFrom)) || ((has(self.database) || has(self.databaseFrom)) && (has(self.username) || has(self.usernameFrom)))",message="structured metastore requires database or databaseFrom and username or usernameFrom"
 // +kubebuilder:validation:XValidation:rule="!(has(self.createDatabase) && self.createDatabase) || ((has(self.host) || has(self.hostFrom)) && !has(self.uri) && !has(self.uriFrom))",message="createDatabase requires structured metastore (host/hostFrom set; database and username via the structured-fields rule) and is not supported with uri or uriFrom"
 type MetastoreSpec struct {
 	// Full SQLAlchemy database URI. Mutually exclusive with structured fields and uriFrom.
@@ -136,57 +129,15 @@ type MetastoreSpec struct {
 	// Superset image, such as psycopg, pg8000, pymysql, or mysqlconnector. The
 	// operator selects the SQLAlchemy scheme only; it does not install Python
 	// driver packages into the image.
+	// TODO: Make sure the validation from line 167 can still occur
 	// +optional
 	// +kubebuilder:validation:Pattern=`^[A-Za-z0-9_]+$`
 	Driver *string `json:"driver,omitempty"`
 
-	// Database hostname.
+	// Common Connection configuration elements
+	// currently includes (Host, Port, Database, Username, Password)
 	// +optional
-	// +kubebuilder:validation:MinLength=1
-	Host *string `json:"host,omitempty"`
-
-	// Reference to a Secret key containing the database hostname.
-	// Mutually exclusive with host.
-	// +optional
-	HostFrom *corev1.SecretKeySelector `json:"hostFrom,omitempty"`
-
-	// Database port. Defaults per type (5432 for PostgreSQL, 3306 for MySQL).
-	// +optional
-	Port *int32 `json:"port,omitempty"`
-
-	// Reference to a Secret key containing the database port as a decimal string.
-	// Mutually exclusive with port.
-	// +optional
-	PortFrom *corev1.SecretKeySelector `json:"portFrom,omitempty"`
-
-	// Database name.
-	// +optional
-	// +kubebuilder:validation:MinLength=1
-	Database *string `json:"database,omitempty"`
-
-	// Reference to a Secret key containing the database name.
-	// Mutually exclusive with database.
-	// +optional
-	DatabaseFrom *corev1.SecretKeySelector `json:"databaseFrom,omitempty"`
-
-	// Database username.
-	// +optional
-	// +kubebuilder:validation:MinLength=1
-	Username *string `json:"username,omitempty"`
-
-	// Reference to a Secret key containing the database username.
-	// Mutually exclusive with username.
-	// +optional
-	UsernameFrom *corev1.SecretKeySelector `json:"usernameFrom,omitempty"`
-
-	// Database password. In Staging or Production, CRD validation rejects plain text passwords — use passwordFrom to reference a Kubernetes Secret.
-	// +optional
-	Password *string `json:"password,omitempty"`
-
-	// Reference to a Secret key containing the database password.
-	// Mutually exclusive with password.
-	// +optional
-	PasswordFrom *corev1.SecretKeySelector `json:"passwordFrom,omitempty"`
+	Connection *ConnectionSpec `json:"connection,omitempty"`
 
 	// CreateDatabase, when true, instructs the operator to attach a one-shot
 	// init container to the migrate Job that issues `CREATE DATABASE` against
@@ -204,6 +155,13 @@ type MetastoreSpec struct {
 
 // ConnectionSpec is an extract of the following fields from Metastore: Host,
 // Port, Username, Password and corresponding secret refs.
+// +kubebuilder:validation:XValidation:rule="!(has(self.host) && has(self.hostFrom))",message="host and hostFrom are mutually exclusive"
+// +kubebuilder:validation:XValidation:rule="!(has(self.port) && has(self.portFrom))",message="port and portFrom are mutually exclusive"
+// +kubebuilder:validation:XValidation:rule="!(has(self.database) && has(self.databaseFrom))",message="database and databaseFrom are mutually exclusive"
+// +kubebuilder:validation:XValidation:rule="!(has(self.username) && has(self.usernameFrom))",message="username and usernameFrom are mutually exclusive"
+// +kubebuilder:validation:XValidation:rule="!(has(self.password) && has(self.passwordFrom))",message="password and passwordFrom are mutually exclusive"
+// +kubebuilder:validation:XValidation:rule="!((has(self.database) || has(self.databaseFrom) || has(self.username) || has(self.usernameFrom) || has(self.password) || has(self.passwordFrom) || has(self.port) || has(self.portFrom) || has(self.driver)) && !(has(self.host) || has(self.hostFrom)))",message="structured fields require host or hostFrom to be set"
+// +kubebuilder:validation:XValidation:rule="!(has(self.host) || has(self.hostFrom)) || ((has(self.database) || has(self.databaseFrom)) && (has(self.username) || has(self.usernameFrom)))",message="structured metastore requires database or databaseFrom and username or usernameFrom"
 type ConnectionSpec struct {
 	// The database hostname.
 	// +optional
@@ -284,44 +242,18 @@ const (
 // +kubebuilder:validation:XValidation:rule="!(has(self.username) && has(self.usernameFrom))",message="username and usernameFrom are mutually exclusive"
 // +kubebuilder:validation:XValidation:rule="!(has(self.password) && has(self.passwordFrom))",message="password and passwordFrom are mutually exclusive"
 type ValkeySpec struct {
-	// Valkey server hostname.
-	// Mutually exclusive with hostFrom.
-	// +optional
-	// +kubebuilder:validation:MinLength=1
-	Host string `json:"host,omitempty"`
-
-	// Reference to a Secret key containing the Valkey server hostname.
-	// Mutually exclusive with host.
-	// +optional
-	HostFrom *corev1.SecretKeySelector `json:"hostFrom,omitempty"`
-
-	// Valkey server port. Defaults to 6379 at runtime when neither port nor
+	// Valekey connection configuration
+	// Key things:
+	// - Includes (as well as the their secret references)
+	//   - Host
+	//   - Port
+	//   - Username
+	//   - Password
+	//   - Database name (extra, can be ignored)
+	// - Default port number of 6379 at runtime when neither port nor
 	// portFrom is set.
 	// +optional
-	Port *int32 `json:"port,omitempty"`
-
-	// Reference to a Secret key containing the Valkey server port as a decimal string.
-	// Mutually exclusive with port.
-	// +optional
-	PortFrom *corev1.SecretKeySelector `json:"portFrom,omitempty"`
-
-	// Valkey username. Useful for Redis ACL or managed Redis-compatible services.
-	// +optional
-	Username *string `json:"username,omitempty"`
-
-	// Reference to a Secret key containing the Valkey username.
-	// Mutually exclusive with username.
-	// +optional
-	UsernameFrom *corev1.SecretKeySelector `json:"usernameFrom,omitempty"`
-
-	// Plain text password. Only allowed in Development mode — use passwordFrom in Staging or Production.
-	// +optional
-	Password *string `json:"password,omitempty"`
-
-	// Reference to a Secret key containing the Valkey password.
-	// Mutually exclusive with password.
-	// +optional
-	PasswordFrom *corev1.SecretKeySelector `json:"passwordFrom,omitempty"`
+	Connection *ConnectionSpec `json:"connection,omitempty"`
 
 	// SSL/TLS configuration. When set, enables SSL for the Valkey connection.
 	// +optional
