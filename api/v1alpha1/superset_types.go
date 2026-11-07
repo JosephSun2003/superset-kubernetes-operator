@@ -666,56 +666,15 @@ type SeedTaskSpec struct {
 // +kubebuilder:validation:XValidation:rule="has(self.password) || has(self.passwordFrom)",message="one of password or passwordFrom must be set"
 // +kubebuilder:validation:XValidation:rule="!has(self.password) || !has(self.passwordFrom)",message="password and passwordFrom are mutually exclusive"
 type SeedSourceSpec struct {
-	// Source database hostname.
-	// Mutually exclusive with hostFrom.
+	// Database type: PostgreSQL (default) or MySQL.
 	// +optional
-	// +kubebuilder:validation:MinLength=1
-	Host string `json:"host,omitempty"`
+	// +kubebuilder:validation:Enum=PostgreSQL;MySQL
+	// +kubebuilder:default=PostgreSQL
+	Type *string `json:"type,omitempty"`
 
-	// Reference to a Secret key containing the source database hostname.
-	// Mutually exclusive with host.
+	// Connection specification, includes host, port, database, username and password
 	// +optional
-	HostFrom *corev1.SecretKeySelector `json:"hostFrom,omitempty"`
-
-	// Source database port. Defaults to 5432 (PostgreSQL) or 3306 (MySQL) based on metastore.type.
-	// +optional
-	Port *int32 `json:"port,omitempty"`
-
-	// Reference to a Secret key containing the source database port as a decimal string.
-	// Mutually exclusive with port.
-	// +optional
-	PortFrom *corev1.SecretKeySelector `json:"portFrom,omitempty"`
-
-	// Database name on the source server.
-	// Mutually exclusive with databaseFrom.
-	// +optional
-	// +kubebuilder:validation:MinLength=1
-	Database string `json:"database,omitempty"`
-
-	// Reference to a Secret key containing the source database name.
-	// Mutually exclusive with database.
-	// +optional
-	DatabaseFrom *corev1.SecretKeySelector `json:"databaseFrom,omitempty"`
-
-	// Username for the source database (should have read-only access).
-	// Mutually exclusive with usernameFrom.
-	// +optional
-	// +kubebuilder:validation:MinLength=1
-	Username string `json:"username,omitempty"`
-
-	// Reference to a Secret key containing the source database username.
-	// Mutually exclusive with username.
-	// +optional
-	UsernameFrom *corev1.SecretKeySelector `json:"usernameFrom,omitempty"`
-
-	// Password for the source database (Development mode only). In Staging,
-	// use passwordFrom to reference a Kubernetes Secret.
-	// +optional
-	Password *string `json:"password,omitempty"`
-
-	// PasswordFrom references a Secret containing the source database password.
-	// +optional
-	PasswordFrom *corev1.SecretKeySelector `json:"passwordFrom,omitempty"`
+	Connection *ConnectionSpec `json:"connection,omitempty"`
 }
 
 // --- Networking spec ---
