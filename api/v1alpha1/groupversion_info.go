@@ -39,7 +39,9 @@ var (
 )
 
 func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(GroupVersion, &Superset{}, &SupersetList{})
+	scheme.AddKnownTypes(GroupVersion, &Superset{}, &SupersetList{}, 
+		&SupersetDatabase{}, &SupersetDatabaseList{}, 
+		&SupersetDataset{}, &SupersetDatasetList{})
 	metav1.AddToGroupVersion(scheme, GroupVersion)
 	return nil
 }
