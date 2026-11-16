@@ -26,6 +26,22 @@ import (
 // SupersetDatabaseSpec defines the desired state of a managed Superset database
 // connection such as how to reach the database and how Superset should treat it.
 type SupersetDatabaseSpec struct {
+	// SupersetRef identifies the Superset this database is imported into.
+	SupersetRef *SupersetRef `json:"ref"`
+
+	// DeletionPolicy controls whether the Superset-side database is retained or
+	// removed when this CR is deleted. Defaults to Retain.
+	// +kubebuilder:validation:Enum=0;1
+	// +kubebuilder:validation:Default=0
+	DeletionPolicy DeletionPolicyEnum `json:"deletion,omitempty"`
+
+	// Name is the display name of this database connection in Superset.
+	Name string `json:"name"`
+
+	// Engine identifies the database dialect used to build the connection.
+	// +optional
+	Engine string `json:"engine"`
+
 	// HostPortUserPassword holds the structured connection details (host, port,
 	// database, username, password) and their Secret references.
 	HostPortUserPassword *ConnectionSpec `json:"hpup,omitempty"`
@@ -114,18 +130,11 @@ type SupersetDatabase struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// SupersetRef identifies the Superset this database is imported into.
-	SupersetRef *SupersetRef `json:"ref,omitempty"`
-
 	// Spec defines the desired state of the database connection.
 	Spec SupersetDatabaseSpec `json:"spec,omitempty"`
 
 	// Status is the observed state of the database connection.
 	Status SupersetDatabaseStatus `json:"status,omitempty"`
-
-	// DeletionPolicy controls whether the Superset-side database is retained or
-	// removed when this CR is deleted.
-	DeletionPolicy DeletionPolicyEnum `json:"deletion,omitempty"`
 }
 
 // +kubebuilder:object:root=true
