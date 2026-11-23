@@ -299,18 +299,19 @@ func collectSecretEnvVars(spec *supersetv1alpha1.SupersetSpec, parentName string
 	}
 
 	// Valkey env vars.
-	if spec.Valkey != nil {
-		envs = append(envs, literalOrSecretEnv(naming.EnvValkeyHost, &spec.Valkey.Host, spec.Valkey.HostFrom))
-		envs = append(envs, literalInt32OrSecretEnv(naming.EnvValkeyPort, spec.Valkey.Port, spec.Valkey.PortFrom, 6379))
-		if spec.Valkey.Username != nil || spec.Valkey.UsernameFrom != nil {
-			envs = append(envs, literalOrSecretEnv(naming.EnvValkeyUser, spec.Valkey.Username, spec.Valkey.UsernameFrom))
+	if spec.Valkey != nil && spec.Valkey.Connection != nil {
+		conn := spec.Valkey.Connection
+		envs = append(envs, literalOrSecretEnv(naming.EnvValkeyHost, conn.Host, conn.HostFrom))
+		envs = append(envs, literalInt32OrSecretEnv(naming.EnvValkeyPort, conn.Port, conn.PortFrom, 6379))
+		if conn.Username != nil || conn.UsernameFrom != nil {
+			envs = append(envs, literalOrSecretEnv(naming.EnvValkeyUser, conn.Username, conn.UsernameFrom))
 		}
-		if isDev && spec.Valkey.Password != nil {
-			envs = append(envs, corev1.EnvVar{Name: naming.EnvValkeyPass, Value: *spec.Valkey.Password})
-		} else if spec.Valkey.PasswordFrom != nil {
+		if isDev && conn.Password != nil {
+			envs = append(envs, corev1.EnvVar{Name: naming.EnvValkeyPass, Value: *conn.Password})
+		} else if conn.PasswordFrom != nil {
 			envs = append(envs, corev1.EnvVar{
 				Name:      naming.EnvValkeyPass,
-				ValueFrom: &corev1.EnvVarSource{SecretKeyRef: spec.Valkey.PasswordFrom},
+				ValueFrom: &corev1.EnvVarSource{SecretKeyRef: conn.PasswordFrom},
 			})
 		}
 	}
@@ -319,7 +320,8 @@ func collectSecretEnvVars(spec *supersetv1alpha1.SupersetSpec, parentName string
 }
 
 func isStructuredMetastore(metastore *supersetv1alpha1.MetastoreSpec) bool {
-	return metastore != nil && (metastore.Host != nil || metastore.HostFrom != nil)
+	return metastore != nil && metastore.Connection != nil &&
+		(metastore.Connection.Host != nil || metastore.Connection.HostFrom != nil)
 }
 
 func literalOrSecretEnv(name string, literal *string, selector *corev1.SecretKeySelector) corev1.EnvVar {
@@ -342,18 +344,22 @@ func literalInt32OrSecretEnv(name string, literal *int32, selector *corev1.Secre
 // structuredMetastoreEnvVars builds the connection env vars shared by
 // Superset components, lifecycle Jobs, and the create-database init container.
 func structuredMetastoreEnvVars(metastore *supersetv1alpha1.MetastoreSpec, isDev bool) []corev1.EnvVar {
-	envs := []corev1.EnvVar{
-		literalOrSecretEnv(naming.EnvDBHost, metastore.Host, metastore.HostFrom),
+	if metastore == nil || metastore.Connection == nil {
+		return nil
 	}
-	envs = append(envs, literalInt32OrSecretEnv(naming.EnvDBPort, metastore.Port, metastore.PortFrom, defaultDBPort(metastore.Type)))
+	conn := metastore.Connection
+	envs := []corev1.EnvVar{
+		literalOrSecretEnv(naming.EnvDBHost, conn.Host, conn.HostFrom),
+	}
+	envs = append(envs, literalInt32OrSecretEnv(naming.EnvDBPort, conn.Port, conn.PortFrom, defaultDBPort(metastore.Type)))
 	envs = append(envs,
-		literalOrSecretEnv(naming.EnvDBName, metastore.Database, metastore.DatabaseFrom),
-		literalOrSecretEnv(naming.EnvDBUser, metastore.Username, metastore.UsernameFrom),
+		literalOrSecretEnv(naming.EnvDBName, conn.Database, conn.DatabaseFrom),
+		literalOrSecretEnv(naming.EnvDBUser, conn.Username, conn.UsernameFrom),
 	)
-	if isDev && metastore.Password != nil {
-		envs = append(envs, corev1.EnvVar{Name: naming.EnvDBPass, Value: *metastore.Password})
-	} else if metastore.PasswordFrom != nil {
-		envs = append(envs, literalOrSecretEnv(naming.EnvDBPass, nil, metastore.PasswordFrom))
+	if isDev && conn.Password != nil {
+		envs = append(envs, corev1.EnvVar{Name: naming.EnvDBPass, Value: *conn.Password})
+	} else if conn.PasswordFrom != nil {
+		envs = append(envs, literalOrSecretEnv(naming.EnvDBPass, nil, conn.PasswordFrom))
 	}
 	return envs
 }

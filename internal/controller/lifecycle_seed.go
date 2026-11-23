@@ -47,7 +47,7 @@ func (r *SupersetReconciler) seedInputs(superset *supersetv1alpha1.Superset) any
 		TargetImage:      targetImage,
 		Trigger:          derefOrDefault(seed.Trigger, ""),
 		ScheduleTick:     r.scheduleTick(seed.CronSchedule),
-		Source:           seedSourceChecksumInput{Type: seedDatabaseType(&superset.Spec), SeedSourceSpec: seed.Source},
+		Source:           seedSourceChecksumInputFrom(seed.Source, seedDatabaseType(&superset.Spec)),
 		ExcludeTables:    seed.ExcludeTables,
 		ExcludeTableData: seed.ExcludeTableData,
 		PostSeedSQL:      seed.PostSeedSQL,
@@ -55,12 +55,69 @@ func (r *SupersetReconciler) seedInputs(superset *supersetv1alpha1.Superset) any
 }
 
 // seedSourceChecksumInput keeps the seed checksum's source shape from when the
-// source had its own type field (always stored, via its CRD default), so
-// upgrading the operator does not change the checksum and trigger a
-// destructive re-seed. The source type is now the metastore type.
+// source spec carried its connection fields directly (before they moved under
+// `connection`), so upgrading the operator does not change the checksum and
+// trigger a destructive re-seed. The source type is stored separately for the
+// same reason (it moved from the source spec to the metastore).
 type seedSourceChecksumInput struct {
 	Type *supersetv1alpha1.DatabaseType `json:"type,omitempty"`
-	supersetv1alpha1.SeedSourceSpec
+	// Flat connection fields mirroring the pre-connection-refactor
+	// SeedSourceSpec — see seedSourceChecksumInputFrom.
+	Host string `json:"host,omitempty"`
+	// Reference to a Secret key containing the source database hostname.
+	// Mutually exclusive with host.
+	// +optional
+	HostFrom *corev1.SecretKeySelector `json:"hostFrom,omitempty"`
+	// Source database port. Defaults to 5432 (PostgreSQL) or 3306 (MySQL) based on metastore.type.
+	// +optional
+	Port *int32 `json:"port,omitempty"`
+	// Reference to a Secret key containing the source database port as a decimal string.
+	// Mutually exclusive with port.
+	// +optional
+	PortFrom *corev1.SecretKeySelector `json:"portFrom,omitempty"`
+	// Database name on the source server.
+	// Mutually exclusive with databaseFrom.
+	// +optional
+	Database string `json:"database,omitempty"`
+	// Reference to a Secret key containing the source database name.
+	// Mutually exclusive with database.
+	// +optional
+	DatabaseFrom *corev1.SecretKeySelector `json:"databaseFrom,omitempty"`
+	// Username for the source database (should have read-only access).
+	// Mutually exclusive with usernameFrom.
+	// +optional
+	Username string `json:"username,omitempty"`
+	// Reference to a Secret key containing the source database username.
+	// Mutually exclusive with username.
+	// +optional
+	UsernameFrom *corev1.SecretKeySelector `json:"usernameFrom,omitempty"`
+	// Password for the source database (Development mode only). In Staging,
+	// use passwordFrom to reference a Kubernetes Secret.
+	// +optional
+	Password *string `json:"password,omitempty"`
+	// PasswordFrom references a Secret containing the source database password.
+	// +optional
+	PasswordFrom *corev1.SecretKeySelector `json:"passwordFrom,omitempty"`
+}
+
+// seedSourceChecksumInputFrom projects the current SeedSourceSpec onto the
+// legacy flat checksum shape (see seedSourceChecksumInput) so the serialized
+// checksum input is identical to what pre-refactor operators produced.
+func seedSourceChecksumInputFrom(src supersetv1alpha1.SeedSourceSpec, dbType *supersetv1alpha1.DatabaseType) seedSourceChecksumInput {
+	in := seedSourceChecksumInput{Type: dbType}
+	if src.Connection != nil {
+		in.Host = derefOrDefault(src.Connection.Host, "")
+		in.HostFrom = src.Connection.HostFrom
+		in.Port = src.Connection.Port
+		in.PortFrom = src.Connection.PortFrom
+		in.Database = derefOrDefault(src.Connection.Database, "")
+		in.DatabaseFrom = src.Connection.DatabaseFrom
+		in.Username = derefOrDefault(src.Connection.Username, "")
+		in.UsernameFrom = src.Connection.UsernameFrom
+		in.Password = src.Connection.Password
+		in.PasswordFrom = src.Connection.PasswordFrom
+	}
+	return in
 }
 
 // seedDatabaseType returns the database type of the seed source and target,
@@ -185,18 +242,19 @@ func collectSeedEnvVars(superset *supersetv1alpha1.Superset) []corev1.EnvVar {
 	isDev := isDevEnvironment(spec)
 
 	// Source env vars.
-	envs = append(envs, literalOrSecretEnv(naming.EnvSeedSrcHost, &seed.Source.Host, seed.Source.HostFrom))
-
-	envs = append(envs, literalInt32OrSecretEnv(naming.EnvSeedSrcPort, seed.Source.Port, seed.Source.PortFrom, defaultDBPort(seedDatabaseType(spec))))
-	envs = append(envs,
-		literalOrSecretEnv(naming.EnvSeedSrcDB, &seed.Source.Database, seed.Source.DatabaseFrom),
-		literalOrSecretEnv(naming.EnvSeedSrcUser, &seed.Source.Username, seed.Source.UsernameFrom),
-	)
-
-	if isDev && seed.Source.Password != nil {
-		envs = append(envs, corev1.EnvVar{Name: naming.EnvSeedSrcPass, Value: *seed.Source.Password})
-	} else if seed.Source.PasswordFrom != nil {
-		envs = append(envs, literalOrSecretEnv(naming.EnvSeedSrcPass, nil, seed.Source.PasswordFrom))
+	if seed.Source.Connection != nil {
+		src := seed.Source.Connection
+		envs = append(envs, literalOrSecretEnv(naming.EnvSeedSrcHost, src.Host, src.HostFrom))
+		envs = append(envs, literalInt32OrSecretEnv(naming.EnvSeedSrcPort, src.Port, src.PortFrom, defaultDBPort(seedDatabaseType(spec))))
+		envs = append(envs,
+			literalOrSecretEnv(naming.EnvSeedSrcDB, src.Database, src.DatabaseFrom),
+			literalOrSecretEnv(naming.EnvSeedSrcUser, src.Username, src.UsernameFrom),
+		)
+		if isDev && src.Password != nil {
+			envs = append(envs, corev1.EnvVar{Name: naming.EnvSeedSrcPass, Value: *src.Password})
+		} else if src.PasswordFrom != nil {
+			envs = append(envs, literalOrSecretEnv(naming.EnvSeedSrcPass, nil, src.PasswordFrom))
+		}
 	}
 
 	// Target env vars (from spec.metastore; seed requires structured metastore).

@@ -39,8 +39,8 @@ func TestBuildCreateDatabaseInitContainer(t *testing.T) {
 	t.Run("disabled by default", func(t *testing.T) {
 		cases := map[string]*supersetv1alpha1.Superset{
 			"nil metastore":       {},
-			"flag unset":          {Spec: supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{Host: new("pg")}}},
-			"flag explicit false": {Spec: supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{Host: new("pg"), CreateDatabase: new(false)}}},
+			"flag unset":          {Spec: supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg")}}}},
+			"flag explicit false": {Spec: supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg")}, CreateDatabase: new(false)}}},
 		}
 		for name, ss := range cases {
 			t.Run(name, func(t *testing.T) {
@@ -57,10 +57,7 @@ func TestBuildCreateDatabaseInitContainer(t *testing.T) {
 			Spec: supersetv1alpha1.SupersetSpec{
 				Environment: new(supersetv1alpha1.EnvironmentDevelopment),
 				Metastore: &supersetv1alpha1.MetastoreSpec{
-					Host:           new("pg.svc"),
-					Database:       new("superset"),
-					Username:       new("superset"),
-					Password:       &pw,
+					Connection:     &supersetv1alpha1.ConnectionSpec{Host: new("pg.svc"), Database: new("superset"), Username: new("superset"), Password: &pw},
 					CreateDatabase: new(true),
 				},
 			},
@@ -123,14 +120,11 @@ func TestBuildCreateDatabaseInitContainer(t *testing.T) {
 		superset := &supersetv1alpha1.Superset{
 			Spec: supersetv1alpha1.SupersetSpec{
 				Metastore: &supersetv1alpha1.MetastoreSpec{
-					Type:     &mysqlType,
-					Host:     new("mysql.svc"),
-					Database: new("superset"),
-					Username: new("superset"),
-					PasswordFrom: &corev1.SecretKeySelector{
+					Type: &mysqlType,
+					Connection: &supersetv1alpha1.ConnectionSpec{Host: new("mysql.svc"), Database: new("superset"), Username: new("superset"), PasswordFrom: &corev1.SecretKeySelector{
 						Name: "metastore-secret",
 						Key:  "password",
-					},
+					}},
 					CreateDatabase: new(true),
 				},
 			},
@@ -179,10 +173,7 @@ func TestBuildCreateDatabaseInitContainer(t *testing.T) {
 		superset := &supersetv1alpha1.Superset{
 			Spec: supersetv1alpha1.SupersetSpec{
 				Metastore: &supersetv1alpha1.MetastoreSpec{
-					Host:           new("pg.svc"),
-					Port:           &port,
-					Database:       new("superset"),
-					Username:       new("superset"),
+					Connection:     &supersetv1alpha1.ConnectionSpec{Host: new("pg.svc"), Port: &port, Database: new("superset"), Username: new("superset")},
 					CreateDatabase: new(true),
 				},
 			},
@@ -209,10 +200,7 @@ func TestBuildCreateDatabaseInitContainer(t *testing.T) {
 			Spec: supersetv1alpha1.SupersetSpec{
 				Environment: new(supersetv1alpha1.EnvironmentDevelopment),
 				Metastore: &supersetv1alpha1.MetastoreSpec{
-					Host:           new("pg.svc"),
-					Database:       &weirdName,
-					Username:       new(funky),
-					Password:       &funky,
+					Connection:     &supersetv1alpha1.ConnectionSpec{Host: new("pg.svc"), Database: &weirdName, Username: new(funky), Password: &funky},
 					CreateDatabase: new(true),
 				},
 			},
@@ -247,9 +235,7 @@ func TestBuildCreateDatabaseInitContainer(t *testing.T) {
 		for kind, wantSnippet := range cases {
 			t.Run(kind, func(t *testing.T) {
 				meta := &supersetv1alpha1.MetastoreSpec{
-					Host:           new("db.svc"),
-					Database:       new("superset"),
-					Username:       new("superset"),
+					Connection:     &supersetv1alpha1.ConnectionSpec{Host: new("db.svc"), Database: new("superset"), Username: new("superset")},
 					CreateDatabase: new(true),
 				}
 				if kind == "mysql" {
@@ -281,9 +267,9 @@ func TestBuildCreateDatabaseInitContainer(t *testing.T) {
 		// init container — the migrate command itself will then fail with a
 		// clear connection/identifier error rather than crashing the operator.
 		cases := map[string]*supersetv1alpha1.MetastoreSpec{
-			"missing host":     {Database: new("d"), Username: new("u"), CreateDatabase: new(true)},
-			"missing database": {Host: new("h"), Username: new("u"), CreateDatabase: new(true)},
-			"missing username": {Host: new("h"), Database: new("d"), CreateDatabase: new(true)},
+			"missing host":     {Connection: &supersetv1alpha1.ConnectionSpec{Database: new("d"), Username: new("u")}, CreateDatabase: new(true)},
+			"missing database": {Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Username: new("u")}, CreateDatabase: new(true)},
+			"missing username": {Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d")}, CreateDatabase: new(true)},
 		}
 		for name, m := range cases {
 			t.Run(name, func(t *testing.T) {
@@ -332,9 +318,7 @@ func TestBuildCreateDatabaseInitContainer(t *testing.T) {
 		superset := &supersetv1alpha1.Superset{
 			Spec: supersetv1alpha1.SupersetSpec{
 				Metastore: &supersetv1alpha1.MetastoreSpec{
-					Host:           new("pg.svc"),
-					Database:       new("superset"),
-					Username:       new("superset"),
+					Connection:     &supersetv1alpha1.ConnectionSpec{Host: new("pg.svc"), Database: new("superset"), Username: new("superset")},
 					CreateDatabase: new(true),
 				},
 			},
@@ -372,11 +356,7 @@ func TestBuildStandardTaskFlatSpec(t *testing.T) {
 			return &corev1.SecretKeySelector{Name: "metastore-secret", Key: key}
 		}
 		superset.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-			HostFrom:       connectionRef("host"),
-			PortFrom:       connectionRef("port"),
-			DatabaseFrom:   connectionRef("dbname"),
-			UsernameFrom:   connectionRef("user"),
-			PasswordFrom:   connectionRef("password"),
+			Connection:     &supersetv1alpha1.ConnectionSpec{HostFrom: connectionRef("host"), PortFrom: connectionRef("port"), DatabaseFrom: connectionRef("dbname"), UsernameFrom: connectionRef("user"), PasswordFrom: connectionRef("password")},
 			CreateDatabase: new(true),
 		}
 		superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
@@ -451,10 +431,7 @@ func TestBuildStandardTaskFlatSpec(t *testing.T) {
 			Key:  "key",
 		}
 		superset.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-			Host:           new("pg.svc"),
-			Database:       new("superset"),
-			Username:       new("superset"),
-			PasswordFrom:   &corev1.SecretKeySelector{Name: "metastore-secret", Key: "password"},
+			Connection:     &supersetv1alpha1.ConnectionSpec{Host: new("pg.svc"), Database: new("superset"), Username: new("superset"), PasswordFrom: &corev1.SecretKeySelector{Name: "metastore-secret", Key: "password"}},
 			CreateDatabase: new(true),
 		}
 		superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
@@ -497,10 +474,7 @@ func TestBuildStandardTaskFlatSpec(t *testing.T) {
 			Key:  "key",
 		}
 		superset.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-			Host:           new("pg.svc"),
-			Database:       new("superset"),
-			Username:       new("superset"),
-			PasswordFrom:   &corev1.SecretKeySelector{Name: "metastore-secret", Key: "password"},
+			Connection:     &supersetv1alpha1.ConnectionSpec{Host: new("pg.svc"), Database: new("superset"), Username: new("superset"), PasswordFrom: &corev1.SecretKeySelector{Name: "metastore-secret", Key: "password"}},
 			CreateDatabase: new(true),
 		}
 
@@ -526,10 +500,7 @@ func TestBuildStandardTaskFlatSpec(t *testing.T) {
 			Key:  "key",
 		}
 		superset.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-			Host:         new("pg.svc"),
-			Database:     new("superset"),
-			Username:     new("superset"),
-			PasswordFrom: &corev1.SecretKeySelector{Name: "metastore-secret", Key: "password"},
+			Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg.svc"), Database: new("superset"), Username: new("superset"), PasswordFrom: &corev1.SecretKeySelector{Name: "metastore-secret", Key: "password"}},
 		}
 
 		r := &SupersetReconciler{}
@@ -548,16 +519,12 @@ func TestMigrateInputs_CreateDatabaseAffectsChecksum(t *testing.T) {
 
 	off := *base
 	off.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-		Host:           new("pg"),
-		Database:       new("superset"),
-		Username:       new("superset"),
+		Connection:     &supersetv1alpha1.ConnectionSpec{Host: new("pg"), Database: new("superset"), Username: new("superset")},
 		CreateDatabase: new(false),
 	}
 	on := *base
 	on.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-		Host:           new("pg"),
-		Database:       new("superset"),
-		Username:       new("superset"),
+		Connection:     &supersetv1alpha1.ConnectionSpec{Host: new("pg"), Database: new("superset"), Username: new("superset")},
 		CreateDatabase: new(true),
 	}
 
@@ -577,10 +544,7 @@ func TestMigrateInputs_StructuredTargetAffectsChecksumWhenCreateDatabaseTrue(t *
 		s := &supersetv1alpha1.Superset{}
 		s.Spec.Image = supersetv1alpha1.ImageSpec{Repository: "superset", Tag: "1.0"}
 		s.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-			Host:           new("pg-old"),
-			Port:           new(int32(5432)),
-			Database:       new("superset"),
-			Username:       new("superset"),
+			Connection:     &supersetv1alpha1.ConnectionSpec{Host: new("pg-old"), Port: new(int32(5432)), Database: new("superset"), Username: new("superset")},
 			CreateDatabase: new(true),
 		}
 		mutate(s.Spec.Metastore)
@@ -590,10 +554,10 @@ func TestMigrateInputs_StructuredTargetAffectsChecksumWhenCreateDatabaseTrue(t *
 	baseline := r.migrateInputs(mkSuperset(func(m *supersetv1alpha1.MetastoreSpec) {}))
 
 	cases := map[string]func(*supersetv1alpha1.MetastoreSpec){
-		"host":     func(m *supersetv1alpha1.MetastoreSpec) { m.Host = new("pg-new") },
-		"port":     func(m *supersetv1alpha1.MetastoreSpec) { m.Port = new(int32(15432)) },
-		"database": func(m *supersetv1alpha1.MetastoreSpec) { m.Database = new("superset_new") },
-		"username": func(m *supersetv1alpha1.MetastoreSpec) { m.Username = new("superset_new") },
+		"host":     func(m *supersetv1alpha1.MetastoreSpec) { m.Connection.Host = new("pg-new") },
+		"port":     func(m *supersetv1alpha1.MetastoreSpec) { m.Connection.Port = new(int32(15432)) },
+		"database": func(m *supersetv1alpha1.MetastoreSpec) { m.Connection.Database = new("superset_new") },
+		"username": func(m *supersetv1alpha1.MetastoreSpec) { m.Connection.Username = new("superset_new") },
 		"type":     func(m *supersetv1alpha1.MetastoreSpec) { m.Type = new(supersetv1alpha1.DatabaseTypeMySQL) },
 	}
 	for name, mutate := range cases {
@@ -611,9 +575,7 @@ func TestMigrateInputs_SelectorIdentityAffectsChecksumWhenCreateDatabaseTrue(t *
 		s := &supersetv1alpha1.Superset{}
 		s.Spec.Image = supersetv1alpha1.ImageSpec{Repository: "superset", Tag: "1.0"}
 		s.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-			HostFrom:       &corev1.SecretKeySelector{Name: "database", Key: key},
-			DatabaseFrom:   &corev1.SecretKeySelector{Name: "database", Key: "dbname"},
-			UsernameFrom:   &corev1.SecretKeySelector{Name: "database", Key: "username"},
+			Connection:     &supersetv1alpha1.ConnectionSpec{HostFrom: &corev1.SecretKeySelector{Name: "database", Key: key}, DatabaseFrom: &corev1.SecretKeySelector{Name: "database", Key: "dbname"}, UsernameFrom: &corev1.SecretKeySelector{Name: "database", Key: "username"}},
 			CreateDatabase: new(true),
 		}
 		return s
@@ -629,8 +591,8 @@ func TestMigrateInputs_LiteralTargetPreservesChecksumShape(t *testing.T) {
 	s := &supersetv1alpha1.Superset{}
 	s.Spec.Image = supersetv1alpha1.ImageSpec{Repository: "superset", Tag: "1.0"}
 	s.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-		Host: new("pg"), Port: new(int32(5432)), Database: new("superset"),
-		Username: new("superset"), CreateDatabase: new(true),
+		Connection:     &supersetv1alpha1.ConnectionSpec{Host: new("pg"), Port: new(int32(5432)), Database: new("superset"), Username: new("superset")},
+		CreateDatabase: new(true),
 	}
 	legacyShape := struct {
 		Image               string
@@ -666,9 +628,7 @@ func TestMigrateInputs_StructuredTargetIgnoredWhenCreateDatabaseFalse(t *testing
 		s := &supersetv1alpha1.Superset{}
 		s.Spec.Image = supersetv1alpha1.ImageSpec{Repository: "superset", Tag: "1.0"}
 		s.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-			Host:     new(host),
-			Database: new("superset"),
-			Username: new("superset"),
+			Connection: &supersetv1alpha1.ConnectionSpec{Host: new(host), Database: new("superset"), Username: new("superset")},
 		}
 		return s
 	}
@@ -690,9 +650,7 @@ func TestMigrateInputs_InitContainerScriptParticipatesInChecksum(t *testing.T) {
 		s := &supersetv1alpha1.Superset{}
 		s.Spec.Image = supersetv1alpha1.ImageSpec{Repository: "superset", Tag: "1.0"}
 		s.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-			Host:           new("pg.svc"),
-			Database:       new("superset"),
-			Username:       new("superset"),
+			Connection:     &supersetv1alpha1.ConnectionSpec{Host: new("pg.svc"), Database: new("superset"), Username: new("superset")},
 			CreateDatabase: new(true),
 			Type:           dbType,
 		}

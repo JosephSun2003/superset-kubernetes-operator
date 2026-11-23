@@ -184,7 +184,9 @@ func createDatabaseEnabled(superset *supersetv1alpha1.Superset) bool {
 	if m.CreateDatabase == nil || !*m.CreateDatabase {
 		return false
 	}
-	return isStructuredMetastore(m) && (m.Database != nil || m.DatabaseFrom != nil) && (m.Username != nil || m.UsernameFrom != nil)
+	return isStructuredMetastore(m) &&
+		(m.Connection.Database != nil || m.Connection.DatabaseFrom != nil) &&
+		(m.Connection.Username != nil || m.Connection.UsernameFrom != nil)
 }
 
 // metastoreType returns the DB type, defaulting to PostgreSQL.

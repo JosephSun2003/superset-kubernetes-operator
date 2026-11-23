@@ -319,7 +319,7 @@ func TestDrainIfNeededSkipsWhenOnlyNonDrainInitWillRun(t *testing.T) {
 			WebServer: &supersetv1alpha1.WebServerComponentSpec{},
 			Lifecycle: &supersetv1alpha1.LifecycleSpec{
 				Seed: &supersetv1alpha1.SeedTaskSpec{
-					Source: supersetv1alpha1.SeedSourceSpec{Host: "postgres", Database: "prod", Username: "superset"},
+					Source: supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("postgres"), Database: new("prod"), Username: new("superset")}},
 				},
 			},
 		},

@@ -146,29 +146,29 @@ func TestBuildConfigInput(t *testing.T) {
 		},
 		{
 			"metastore structured postgresql",
-			&supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{Host: new("db.example.com")}},
+			&supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("db.example.com")}}},
 			supersetconfig.MetastoreStructured, "PostgreSQL", "", "",
 		},
 		{
 			"hostFrom triggers structured mode",
-			&supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{HostFrom: &corev1.SecretKeySelector{
+			&supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{Connection: &supersetv1alpha1.ConnectionSpec{HostFrom: &corev1.SecretKeySelector{
 				Name: "db-secret", Key: "host",
-			}}},
+			}}}},
 			supersetconfig.MetastoreStructured, "PostgreSQL", "", "",
 		},
 		{
 			"metastore structured mysql",
-			&supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{Type: new(supersetv1alpha1.DatabaseTypeMySQL), Host: new("db.example.com")}},
+			&supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{Type: new(supersetv1alpha1.DatabaseTypeMySQL), Connection: &supersetv1alpha1.ConnectionSpec{Host: new("db.example.com")}}},
 			supersetconfig.MetastoreStructured, "MySQL", "", "",
 		},
 		{
 			"metastore structured custom driver",
-			&supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{Type: new(supersetv1alpha1.DatabaseTypeMySQL), Host: new("db.example.com"), Driver: new("pymysql")}},
+			&supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{Type: new(supersetv1alpha1.DatabaseTypeMySQL), Driver: new("pymysql"), Connection: &supersetv1alpha1.ConnectionSpec{Host: new("db.example.com")}}},
 			supersetconfig.MetastoreStructured, "MySQL", "pymysql", "",
 		},
 		{
 			"URI takes precedence over host",
-			&supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{URI: new("postgresql://..."), Host: new("ignored")}},
+			&supersetv1alpha1.SupersetSpec{Metastore: &supersetv1alpha1.MetastoreSpec{URI: new("postgresql://..."), Connection: &supersetv1alpha1.ConnectionSpec{Host: new("ignored")}}},
 			supersetconfig.MetastorePassthrough, "", "", "",
 		},
 		{
@@ -252,8 +252,10 @@ func TestCollectSecretEnvVars_Metastore(t *testing.T) {
 		spec := &supersetv1alpha1.SupersetSpec{
 			Environment: &dev,
 			Metastore: &supersetv1alpha1.MetastoreSpec{
-				Host: new("db.example.com"), Port: new(int32(5433)),
-				Database: new("superset"), Username: new("admin"), Password: new("secret"),
+				Connection: &supersetv1alpha1.ConnectionSpec{
+					Host: new("db.example.com"), Port: new(int32(5433)),
+					Database: new("superset"), Username: new("admin"), Password: new("secret"),
+				},
 			},
 		}
 		envMap := envSliceToMap(collectSecretEnvVars(spec, "test"))
@@ -277,7 +279,7 @@ func TestCollectSecretEnvVars_Metastore(t *testing.T) {
 
 	t.Run("default postgresql port", func(t *testing.T) {
 		spec := &supersetv1alpha1.SupersetSpec{
-			Metastore: &supersetv1alpha1.MetastoreSpec{Host: new("db.example.com")},
+			Metastore: &supersetv1alpha1.MetastoreSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("db.example.com")}},
 		}
 		envMap := envSliceToMap(collectSecretEnvVars(spec, "test"))
 		if envMap["SUPERSET_OPERATOR__DB_PORT"] != "5432" {
@@ -287,7 +289,7 @@ func TestCollectSecretEnvVars_Metastore(t *testing.T) {
 
 	t.Run("default mysql port", func(t *testing.T) {
 		spec := &supersetv1alpha1.SupersetSpec{
-			Metastore: &supersetv1alpha1.MetastoreSpec{Type: new(supersetv1alpha1.DatabaseTypeMySQL), Host: new("db.example.com")},
+			Metastore: &supersetv1alpha1.MetastoreSpec{Type: new(supersetv1alpha1.DatabaseTypeMySQL), Connection: &supersetv1alpha1.ConnectionSpec{Host: new("db.example.com")}},
 		}
 		envMap := envSliceToMap(collectSecretEnvVars(spec, "test"))
 		if envMap["SUPERSET_OPERATOR__DB_PORT"] != "3306" {
@@ -315,9 +317,11 @@ func TestCollectSecretEnvVars_Metastore(t *testing.T) {
 		spec := &supersetv1alpha1.SupersetSpec{
 			Environment: &prod,
 			Metastore: &supersetv1alpha1.MetastoreSpec{
-				Host: new("db.example.com"), Database: new("superset"), Username: new("admin"),
-				Password:     new("secret"),
-				PasswordFrom: &corev1.SecretKeySelector{Name: "db", Key: "password"},
+				Connection: &supersetv1alpha1.ConnectionSpec{
+					Host: new("db.example.com"), Database: new("superset"), Username: new("admin"),
+					Password:     new("secret"),
+					PasswordFrom: &corev1.SecretKeySelector{Name: "db", Key: "password"},
+				},
 			},
 		}
 		envs := collectSecretEnvVars(spec, "test")
@@ -455,11 +459,13 @@ func TestCollectSecretEnvVars_FromFields(t *testing.T) {
 		spec := &supersetv1alpha1.SupersetSpec{
 			SecretKeyFrom: secretRef("app-secret", "secret-key"),
 			Metastore: &supersetv1alpha1.MetastoreSpec{
-				HostFrom:     secretRef("db-endpoint", "host"),
-				PortFrom:     secretRef("db-endpoint", "port"),
-				DatabaseFrom: secretRef("db-credentials", "dbname"),
-				UsernameFrom: secretRef("db-credentials", "user"),
-				PasswordFrom: secretRef("db-secret", "password"),
+				Connection: &supersetv1alpha1.ConnectionSpec{
+					HostFrom:     secretRef("db-endpoint", "host"),
+					PortFrom:     secretRef("db-endpoint", "port"),
+					DatabaseFrom: secretRef("db-credentials", "dbname"),
+					UsernameFrom: secretRef("db-credentials", "user"),
+					PasswordFrom: secretRef("db-secret", "password"),
+				},
 			},
 		}
 		envs := collectSecretEnvVars(spec, "test")
@@ -671,7 +677,7 @@ func TestBuildConfigInput_Valkey(t *testing.T) {
 
 	t.Run("minimal valkey", func(t *testing.T) {
 		input := buildConfigInput(&supersetv1alpha1.SupersetSpec{
-			Valkey: &supersetv1alpha1.ValkeySpec{Host: "valkey.default.svc"},
+			Valkey: &supersetv1alpha1.ValkeySpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("valkey.default.svc")}},
 		})
 		if input.Valkey == nil {
 			t.Fatal("expected non-nil ValkeyInput")
@@ -706,7 +712,7 @@ func TestBuildConfigInput_Valkey(t *testing.T) {
 	t.Run("custom overrides", func(t *testing.T) {
 		input := buildConfigInput(&supersetv1alpha1.SupersetSpec{
 			Valkey: &supersetv1alpha1.ValkeySpec{
-				Host: "valkey.default.svc",
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("valkey.default.svc")},
 				Cache: &supersetv1alpha1.ValkeyCacheSpec{
 					Database:       new(int32(10)),
 					KeyPrefix:      new("custom_"),
@@ -740,7 +746,7 @@ func TestBuildConfigInput_Valkey(t *testing.T) {
 	t.Run("with SSL", func(t *testing.T) {
 		input := buildConfigInput(&supersetv1alpha1.SupersetSpec{
 			Valkey: &supersetv1alpha1.ValkeySpec{
-				Host: "valkey.default.svc",
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("valkey.default.svc")},
 				SSL: &supersetv1alpha1.ValkeySSLSpec{
 					CertRequired: new("required"),
 					KeyFile:      new("/tls/key.pem"),
@@ -764,7 +770,7 @@ func TestBuildConfigInput_Valkey(t *testing.T) {
 func TestCollectSecretEnvVars_Valkey(t *testing.T) {
 	t.Run("host and default port", func(t *testing.T) {
 		spec := &supersetv1alpha1.SupersetSpec{
-			Valkey: &supersetv1alpha1.ValkeySpec{Host: "valkey.default.svc"},
+			Valkey: &supersetv1alpha1.ValkeySpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("valkey.default.svc")}},
 		}
 		envMap := envSliceToMap(collectSecretEnvVars(spec, "test"))
 		if envMap["SUPERSET_OPERATOR__VALKEY_HOST"] != "valkey.default.svc" {
@@ -777,7 +783,7 @@ func TestCollectSecretEnvVars_Valkey(t *testing.T) {
 
 	t.Run("custom port", func(t *testing.T) {
 		spec := &supersetv1alpha1.SupersetSpec{
-			Valkey: &supersetv1alpha1.ValkeySpec{Host: "valkey", Port: new(int32(6380))},
+			Valkey: &supersetv1alpha1.ValkeySpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("valkey"), Port: new(int32(6380))}},
 		}
 		envMap := envSliceToMap(collectSecretEnvVars(spec, "test"))
 		if envMap["SUPERSET_OPERATOR__VALKEY_PORT"] != "6380" {
@@ -787,7 +793,7 @@ func TestCollectSecretEnvVars_Valkey(t *testing.T) {
 
 	t.Run("username", func(t *testing.T) {
 		spec := &supersetv1alpha1.SupersetSpec{
-			Valkey: &supersetv1alpha1.ValkeySpec{Host: "valkey", Username: new("acl-user")},
+			Valkey: &supersetv1alpha1.ValkeySpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("valkey"), Username: new("acl-user")}},
 		}
 		envMap := envSliceToMap(collectSecretEnvVars(spec, "test"))
 		if envMap["SUPERSET_OPERATOR__VALKEY_USER"] != "acl-user" {
@@ -798,7 +804,7 @@ func TestCollectSecretEnvVars_Valkey(t *testing.T) {
 	t.Run("dev mode password", func(t *testing.T) {
 		spec := &supersetv1alpha1.SupersetSpec{
 			Environment: new(supersetv1alpha1.EnvironmentDevelopment),
-			Valkey:      &supersetv1alpha1.ValkeySpec{Host: "valkey", Password: new("secret")},
+			Valkey:      &supersetv1alpha1.ValkeySpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("valkey"), Password: new("secret")}},
 		}
 		envMap := envSliceToMap(collectSecretEnvVars(spec, "test"))
 		if envMap["SUPERSET_OPERATOR__VALKEY_PASS"] != "secret" {
@@ -809,7 +815,7 @@ func TestCollectSecretEnvVars_Valkey(t *testing.T) {
 	t.Run("prod mode password ignored", func(t *testing.T) {
 		spec := &supersetv1alpha1.SupersetSpec{
 			Environment: new(supersetv1alpha1.EnvironmentProduction),
-			Valkey:      &supersetv1alpha1.ValkeySpec{Host: "valkey", Password: new("secret")},
+			Valkey:      &supersetv1alpha1.ValkeySpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("valkey"), Password: new("secret")}},
 		}
 		envMap := envSliceToMap(collectSecretEnvVars(spec, "test"))
 		if _, ok := envMap["SUPERSET_OPERATOR__VALKEY_PASS"]; ok {
@@ -820,10 +826,12 @@ func TestCollectSecretEnvVars_Valkey(t *testing.T) {
 	t.Run("passwordFrom", func(t *testing.T) {
 		spec := &supersetv1alpha1.SupersetSpec{
 			Valkey: &supersetv1alpha1.ValkeySpec{
-				Host: "valkey",
-				PasswordFrom: &corev1.SecretKeySelector{
-					Name: "valkey-secret",
-					Key:  "password",
+				Connection: &supersetv1alpha1.ConnectionSpec{
+					Host: new("valkey"),
+					PasswordFrom: &corev1.SecretKeySelector{
+						Name: "valkey-secret",
+						Key:  "password",
+					},
 				},
 			},
 		}
@@ -848,10 +856,12 @@ func TestCollectSecretEnvVars_Valkey(t *testing.T) {
 		}
 		spec := &supersetv1alpha1.SupersetSpec{
 			Valkey: &supersetv1alpha1.ValkeySpec{
-				HostFrom:     ref("endpoint"),
-				PortFrom:     ref("port"),
-				UsernameFrom: ref("username"),
-				PasswordFrom: ref("password"),
+				Connection: &supersetv1alpha1.ConnectionSpec{
+					HostFrom:     ref("endpoint"),
+					PortFrom:     ref("port"),
+					UsernameFrom: ref("username"),
+					PasswordFrom: ref("password"),
+				},
 			},
 		}
 		wantKeys := map[string]string{

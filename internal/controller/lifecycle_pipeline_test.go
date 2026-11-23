@@ -60,24 +60,18 @@ func TestLifecyclePipeline_FullSuccess(t *testing.T) {
 			},
 			PreviousSecretKey: &previousSecretKey,
 			Metastore: &supersetv1alpha1.MetastoreSpec{
-				Host:     &metastoreHost,
-				Database: &metastoreDB,
-				Username: &metastoreUser,
-				PasswordFrom: &corev1.SecretKeySelector{
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: &metastoreHost, Database: &metastoreDB, Username: &metastoreUser, PasswordFrom: &corev1.SecretKeySelector{
 					Name: "db-secret",
 					Key:  "password",
-				},
+				}},
 			},
 			Lifecycle: &supersetv1alpha1.LifecycleSpec{
 				Seed: &supersetv1alpha1.SeedTaskSpec{
 					Source: supersetv1alpha1.SeedSourceSpec{
-						Host:     "pg-prod.svc",
-						Database: "superset_prod",
-						Username: "reader",
-						PasswordFrom: &corev1.SecretKeySelector{
+						Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-prod.svc"), Database: new("superset_prod"), Username: new("reader"), PasswordFrom: &corev1.SecretKeySelector{
 							Name: "src-secret",
 							Key:  "password",
-						},
+						}},
 					},
 				},
 				Migrate: &supersetv1alpha1.MigrateTaskSpec{},
