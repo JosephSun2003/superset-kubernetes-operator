@@ -232,6 +232,13 @@ type SupersetRef struct {
 	Name string `json:"name"`
 }
 
+// SupersetDatabaseRef references a SupersetDatabase resource in the same namespace.
+type SupersetDatabaseRef struct {
+	// Name of the target SupersetDatabase CR.
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+}
+
 // DeletionPolicyEnum controls deletion behavior (Retain or Delete).
 type DeletionPolicyEnum int
 
