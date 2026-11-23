@@ -239,15 +239,15 @@ type SupersetDatabaseRef struct {
 	Name string `json:"name"`
 }
 
-// DeletionPolicyEnum controls deletion behavior (Retain or Delete).
-type DeletionPolicyEnum int
+// DeletionPolicy controls what happens to the corresponding Superset object when its CR is deleted.
+// +kubebuilder:validation:Enum=Retain;Delete
+type DeletionPolicy string
 
 const (
-	// Retain leaves the Superset-side object untouched when the CR is deleted.
-	Retain DeletionPolicyEnum = iota
-
-	// Delete removes the Superset-side object when the CR is deleted.
-	Delete
+	// DeletionPolicyRetain leaves the Superset-side object untouched when the CR is deleted.
+	DeletionPolicyRetain DeletionPolicy = "Retain"
+	// DeletionPolicyDelete removes the Superset-side object when the CR is deleted.
+	DeletionPolicyDelete DeletionPolicy = "Delete"
 )
 
 // --- Valkey cache configuration ---

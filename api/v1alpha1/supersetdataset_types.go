@@ -35,27 +35,39 @@ type SupersetDatasetSpec struct {
 	// UUID is the Superset-side identity of this dataset. When set, the import
 	// updates the existing Superset object with this UUID. When omitted, a new
 	// Superset object is created instead.
+	// +optional
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="uuid is immutable"
 	UUID       *string `json:"uuid,omitempty"`
 
 	// TableName is the display name of this dataset connection in Superset.
 	TableName  *string `json:"datasetName,omitempty"`
 
 	// TableQuery is the SQL query for this dataset connection in Superset.
+	// +optional
 	TableQuery *string `json:"query,omitempty"`
 
 	// DeletionPolicy controls whether the Superset-side dataset is retained or
 	// removed when this CR is deleted. Defaults to Retain.
-	// +kubebuilder:validation:Enum=0;1
-	// +kubebuilder:validation:Default=0
-	DeletionPolicy DeletionPolicyEnum `json:"deletion,omitempty"`
+	// +kubebuilder:default="Retain"
+	// +optional
+	DeletionPolicy DeletionPolicy `json:"deletionPolicy,omitempty"`
 }
 
 // SupersetDatasetStatus defines the observed state of a managed Superset dataset.
 type SupersetDatasetStatus struct {
+
+	// If spec.uuid is provided, this will be the same as spec.uuid. Otherwise, this will be the UUID assigned by Superset.
+	UUID *string `json:"uuid,omitempty"`
+
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
 	Existence bool `json:"exists,omitempty"`
 	// will be array in case sorting or search operations go along one or the other dimension
 	Size       []int              `json:"size,omitempty"`
 	Sorted     bool               `json:"sorted,omitempty"`
+
+	// Conditions give a detailed breakdown of resource state via standard fields
+	// (Type, Status, Reason, etc.). Reveals object status and potential issues.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 

@@ -27,13 +27,13 @@ import (
 // connection such as how to reach the database and how Superset should treat it.
 type SupersetDatabaseSpec struct {
 	// SupersetRef identifies the Superset this database is imported into.
-	SupersetRef *SupersetRef `json:"ref"`
+	SupersetRef *SupersetRef `json:"supersetRef"`
 
 	// DeletionPolicy controls whether the Superset-side database is retained or
 	// removed when this CR is deleted. Defaults to Retain.
-	// +kubebuilder:validation:Enum=0;1
-	// +kubebuilder:validation:Default=0
-	DeletionPolicy DeletionPolicyEnum `json:"deletion,omitempty"`
+	// +kubebuilder:default="Retain"
+	// +optional
+	DeletionPolicy DeletionPolicy `json:"deletionPolicy,omitempty"`
 
 	// Name is the display name of this database connection in Superset.
 	Name string `json:"name"`
@@ -44,11 +44,13 @@ type SupersetDatabaseSpec struct {
 
 	// HostPortUserPassword holds the structured connection details (host, port,
 	// database, username, password) and their Secret references.
-	HostPortUserPassword *ConnectionSpec `json:"hpup,omitempty"`
+	HostPortUserPassword *ConnectionSpec `json:"hostPortUserPassword,omitempty"`
 
 	// UUID is the Superset-side identity of this database. When set, the import
 	// updates the existing Superset object with this UUID. When omitted, a new
 	// Superset object is created instead.
+	// +optional
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="uuid is immutable"
 	UUID *string `json:"uuid,omitempty"`
 
 	// EncryptedExtra is Superset's inline encrypted_extra payload for this database
@@ -72,44 +74,30 @@ type SupersetDatabaseSpec struct {
 	// AllowDml permits write statements (INSERT/UPDATE/DELETE) from SQL Lab on this
 	// database. When unset, Superset's default behavior applies.
 	// +optional
-	AllowDml *bool `json:"dml,omitempty"`
-
-	// AllowDmlFrom references a Secret key containing the AllowDml flag.
-	// Mutually exclusive with AllowDml.
-	// +optional
-	AllowDmlFrom *corev1.SecretKeySelector `json:"dmlFrom,omitempty"`
+	AllowDml *bool `json:"allowDml,omitempty"`
 
 	// FileUpload permits uploading data files (CSV/Excel) to this database.
 	// +optional
-	FileUpload *bool `json:"upload,omitempty"`
-
-	// FileUploadFrom references a Secret key containing the FileUpload flag.
-	// Mutually exclusive with FileUpload.
-	// +optional
-	FileUploadFrom *corev1.SecretKeySelector `json:"uploadFrom,omitempty"`
+	FileUpload *bool `json:"fileUpload,omitempty"`
 
 	// ExposeInSqllab makes this database selectable in SQL Lab.
 	// +optional
 	ExposeInSqllab *bool `json:"exposeInSqlLab,omitempty"`
 
-	// ExposeInSqllabFrom references a Secret key containing the ExposeInSqllab flag.
-	// Mutually exclusive with ExposeInSqllab.
-	// +optional
-	ExposeInSqllabFrom *corev1.SecretKeySelector `json:"exposeInSqlLabFrom,omitempty"`
-
 	// ImpersonateUser runs queries as the logged-in Superset user rather than the
 	// connection user. Only applicable where the database supports impersonation.
 	// +optional
-	ImpersonateUser *bool `json:"impersonate,omitempty"`
-
-	// ImpersonateUserFrom references a Secret key containing the ImpersonateUser flag.
-	// Mutually exclusive with ImpersonateUser.
-	// +optional
-	ImpersonateUserFrom *corev1.SecretKeySelector `json:"impersonateFrom,omitempty"`
+	ImpersonateUser *bool `json:"impersonateUser,omitempty"`
 }
 
 // SupersetDatabaseStatus defines the observed state of a managed Superset database.
 type SupersetDatabaseStatus struct {
+
+	// If spec.uuid is provided, this will be the same as spec.uuid. Otherwise, this will be the UUID assigned by Superset.
+	UUID *string `json:"uuid,omitempty"`
+
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
 	// ExternalManagement reports whether the object is marked externally managed in
 	// Superset, which hides edit controls in the UI.
 	ExternalManagement *bool `json:"externalManagement,omitempty"`
