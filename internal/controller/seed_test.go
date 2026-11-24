@@ -42,9 +42,7 @@ func TestBuildSeedScript(t *testing.T) {
 	t.Run("postgres base", func(t *testing.T) {
 		seed := &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				Host:     "pg-prod.svc",
-				Database: "superset_prod",
-				Username: "reader",
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 			},
 		}
 
@@ -74,9 +72,7 @@ func TestBuildSeedScript(t *testing.T) {
 	t.Run("postgres exclude tables", func(t *testing.T) {
 		seed := &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				Host:     "pg-prod.svc",
-				Database: "superset_prod",
-				Username: "reader",
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 			},
 			ExcludeTables:    []string{"logs", "tab_state"},
 			ExcludeTableData: []string{"query", "saved_query"},
@@ -101,9 +97,7 @@ func TestBuildSeedScript(t *testing.T) {
 	t.Run("mysql base", func(t *testing.T) {
 		seed := &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				Host:     "mysql-prod.svc",
-				Database: "superset_prod",
-				Username: "reader",
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("mysql-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 			},
 		}
 
@@ -160,9 +154,7 @@ func TestBuildSeedScript(t *testing.T) {
 	t.Run("mysql exclude tables", func(t *testing.T) {
 		seed := &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				Host:     "mysql-prod.svc",
-				Database: "superset_prod",
-				Username: "reader",
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("mysql-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 			},
 			ExcludeTables: []string{"logs", "tab_state"},
 		}
@@ -180,9 +172,7 @@ func TestBuildSeedScript(t *testing.T) {
 	t.Run("mysql exclude table data", func(t *testing.T) {
 		seed := &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				Host:     "mysql-prod.svc",
-				Database: "superset_prod",
-				Username: "reader",
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("mysql-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 			},
 			ExcludeTables:    []string{"tab_state"},
 			ExcludeTableData: []string{"logs", "query"},
@@ -218,9 +208,7 @@ func TestBuildSeedScript(t *testing.T) {
 	t.Run("mysql no exclude table data keeps single pass", func(t *testing.T) {
 		seed := &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				Host:     "mysql-prod.svc",
-				Database: "superset_prod",
-				Username: "reader",
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("mysql-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 			},
 		}
 
@@ -235,7 +223,7 @@ func TestBuildSeedScript(t *testing.T) {
 		t.Run("postgres", func(t *testing.T) {
 			seed := &supersetv1alpha1.SeedTaskSpec{
 				Source: supersetv1alpha1.SeedSourceSpec{
-					Host: "pg-prod.svc", Database: "superset_prod", Username: "reader",
+					Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 				},
 				PostSeedSQL: []string{
 					"UPDATE report_schedule SET active = false",
@@ -259,7 +247,7 @@ func TestBuildSeedScript(t *testing.T) {
 		t.Run("mysql", func(t *testing.T) {
 			seed := &supersetv1alpha1.SeedTaskSpec{
 				Source: supersetv1alpha1.SeedSourceSpec{
-					Host: "mysql-prod.svc", Database: "superset_prod", Username: "reader",
+					Connection: &supersetv1alpha1.ConnectionSpec{Host: new("mysql-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 				},
 				PostSeedSQL: []string{"UPDATE report_schedule SET active = 0"},
 			}
@@ -279,12 +267,12 @@ func TestBuildSeedScript(t *testing.T) {
 		payloads := []string{"x$(id)", "y`whoami`", `z"$(touch /tmp/pwn)"`}
 		for _, p := range payloads {
 			pg := buildPostgresSeedScript(&supersetv1alpha1.SeedTaskSpec{
-				Source:        supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"},
+				Source:        supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}},
 				ExcludeTables: []string{p},
 				PostSeedSQL:   []string{p},
 			})
 			my := buildMySQLSeedScript(&supersetv1alpha1.SeedTaskSpec{
-				Source:        supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"},
+				Source:        supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}},
 				ExcludeTables: []string{p},
 				PostSeedSQL:   []string{p},
 			})
@@ -327,9 +315,7 @@ func TestBuildSeedCommand(t *testing.T) {
 			Seed: &supersetv1alpha1.SeedTaskSpec{
 				Command: []string{"/bin/sh", "-c", "custom-seed-script.sh"},
 				Source: supersetv1alpha1.SeedSourceSpec{
-					Host:     "pg-prod.svc",
-					Database: "superset_prod",
-					Username: "reader",
+					Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 				},
 			},
 		}
@@ -347,9 +333,7 @@ func TestBuildSeedCommand(t *testing.T) {
 		superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 			Seed: &supersetv1alpha1.SeedTaskSpec{
 				Source: supersetv1alpha1.SeedSourceSpec{
-					Host:     "pg-prod.svc",
-					Database: "superset_prod",
-					Username: "reader",
+					Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 				},
 			},
 		}
@@ -372,9 +356,7 @@ func TestBuildSeedCommand(t *testing.T) {
 		superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 			Seed: &supersetv1alpha1.SeedTaskSpec{
 				Source: supersetv1alpha1.SeedSourceSpec{
-					Host:     "mysql-prod.svc",
-					Database: "superset_prod",
-					Username: "reader",
+					Connection: &supersetv1alpha1.ConnectionSpec{Host: new("mysql-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 				},
 			},
 		}
@@ -396,18 +378,12 @@ func TestBuildSeedTaskFlatSpec_CommandOnContainer(t *testing.T) {
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 		Seed: &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				Host:     "pg-prod.svc",
-				Database: "superset_prod",
-				Username: "reader",
-				Password: new("secret"),
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-prod.svc"), Database: new("superset_prod"), Username: new("reader"), Password: new("secret")},
 			},
 		},
 	}
 	superset.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-		Host:     new("postgres"),
-		Database: new("superset_staging"),
-		Username: new("superset"),
-		Password: new("pass"),
+		Connection: &supersetv1alpha1.ConnectionSpec{Host: new("postgres"), Database: new("superset_staging"), Username: new("superset"), Password: new("pass")},
 	}
 
 	flatSpec := r.buildSeedTaskFlatSpec(superset, "default", &resolution.SharedInput{})
@@ -441,18 +417,12 @@ func TestReconcileLifecycleTask_SeedIgnoresBootstrapScript(t *testing.T) {
 			Lifecycle: &supersetv1alpha1.LifecycleSpec{
 				Seed: &supersetv1alpha1.SeedTaskSpec{
 					Source: supersetv1alpha1.SeedSourceSpec{
-						Host:     "pg-prod.svc",
-						Database: "superset_prod",
-						Username: "reader",
-						Password: &password,
+						Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-prod.svc"), Database: new("superset_prod"), Username: new("reader"), Password: &password},
 					},
 				},
 			},
 			Metastore: &supersetv1alpha1.MetastoreSpec{
-				Host:     &host,
-				Database: &database,
-				Username: &username,
-				Password: &password,
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: &host, Database: &database, Username: &username, Password: &password},
 			},
 		},
 	}
@@ -493,20 +463,12 @@ func TestCollectSeedEnvVars(t *testing.T) {
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 		Seed: &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				Host:     "pg-prod.svc",
-				Port:     new(int32(5433)),
-				Database: "superset_prod",
-				Username: "reader",
-				Password: &pw,
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-prod.svc"), Port: new(int32(5433)), Database: new("superset_prod"), Username: new("reader"), Password: &pw},
 			},
 		},
 	}
 	superset.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-		Host:     &host,
-		Port:     &port,
-		Database: &db,
-		Username: &user,
-		Password: &pw,
+		Connection: &supersetv1alpha1.ConnectionSpec{Host: &host, Port: &port, Database: &db, Username: &user, Password: &pw},
 	}
 
 	envs := collectSeedEnvVars(superset)
@@ -548,20 +510,12 @@ func TestCollectSeedEnvVars_SecretRef(t *testing.T) {
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 		Seed: &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				HostFrom:     secretRef("prod-connection", "host"),
-				PortFrom:     secretRef("prod-connection", "port"),
-				DatabaseFrom: secretRef("prod-connection", "dbname"),
-				UsernameFrom: secretRef("prod-creds", "user"),
-				PasswordFrom: secretRef("prod-creds", "password"),
+				Connection: &supersetv1alpha1.ConnectionSpec{HostFrom: secretRef("prod-connection", "host"), PortFrom: secretRef("prod-connection", "port"), DatabaseFrom: secretRef("prod-connection", "dbname"), UsernameFrom: secretRef("prod-creds", "user"), PasswordFrom: secretRef("prod-creds", "password")},
 			},
 		},
 	}
 	superset.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-		HostFrom:     secretRef("staging-connection", "host"),
-		PortFrom:     secretRef("staging-connection", "port"),
-		DatabaseFrom: secretRef("staging-connection", "dbname"),
-		UsernameFrom: secretRef("staging-creds", "user"),
-		PasswordFrom: secretRef("staging-creds", "password"),
+		Connection: &supersetv1alpha1.ConnectionSpec{HostFrom: secretRef("staging-connection", "host"), PortFrom: secretRef("staging-connection", "port"), DatabaseFrom: secretRef("staging-connection", "dbname"), UsernameFrom: secretRef("staging-creds", "user"), PasswordFrom: secretRef("staging-creds", "password")},
 	}
 
 	envs := collectSeedEnvVars(superset)
@@ -593,9 +547,7 @@ func TestResolveSeedImage(t *testing.T) {
 	t.Run("default postgres", func(t *testing.T) {
 		seed := &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				Host:     "pg-prod.svc",
-				Database: "superset_prod",
-				Username: "reader",
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 			},
 		}
 
@@ -610,9 +562,7 @@ func TestResolveSeedImage(t *testing.T) {
 		mysqlType := supersetv1alpha1.DatabaseTypeMySQL
 		seed := &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				Host:     "mysql-prod.svc",
-				Database: "superset_prod",
-				Username: "reader",
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("mysql-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 			},
 		}
 
@@ -626,9 +576,7 @@ func TestResolveSeedImage(t *testing.T) {
 	t.Run("custom override", func(t *testing.T) {
 		seed := &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				Host:     "pg-prod.svc",
-				Database: "superset_prod",
-				Username: "reader",
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-prod.svc"), Database: new("superset_prod"), Username: new("reader")},
 			},
 			Image: &supersetv1alpha1.ContainerImageSpec{
 				Repository: "my-registry/custom-tools",
@@ -682,9 +630,7 @@ func TestResolveSeedImage(t *testing.T) {
 				srcType := tt.srcType
 				seed := &supersetv1alpha1.SeedTaskSpec{
 					Source: supersetv1alpha1.SeedSourceSpec{
-						Host:     "src.svc",
-						Database: "src",
-						Username: "reader",
+						Connection: &supersetv1alpha1.ConnectionSpec{Host: new("src.svc"), Database: new("src"), Username: new("reader")},
 					},
 					Image: tt.image,
 				}
@@ -734,7 +680,7 @@ func TestIsTaskEnabled(t *testing.T) {
 			name: "seed present and not disabled",
 			spec: &supersetv1alpha1.LifecycleSpec{
 				Seed: &supersetv1alpha1.SeedTaskSpec{
-					Source: supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"},
+					Source: supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}},
 				},
 			},
 			taskType: taskTypeSeed,
@@ -745,7 +691,7 @@ func TestIsTaskEnabled(t *testing.T) {
 			spec: &supersetv1alpha1.LifecycleSpec{
 				Seed: &supersetv1alpha1.SeedTaskSpec{
 					Disabled: new(true),
-					Source:   supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"},
+					Source:   supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}},
 				},
 			},
 			taskType: taskTypeSeed,
@@ -853,7 +799,7 @@ func TestTaskRequiresDrain_Defaults(t *testing.T) {
 	superset := &supersetv1alpha1.Superset{}
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 		Seed: &supersetv1alpha1.SeedTaskSpec{
-			Source: supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"},
+			Source: supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}},
 		},
 	}
 
@@ -1146,7 +1092,7 @@ func TestSeedInputs_ScheduleTickChangesChecksum(t *testing.T) {
 	after := time.Date(2026, 5, 11, 2, 1, 0, 0, time.UTC)
 
 	cronExpr := "0 2 * * *"
-	source := supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"}
+	source := supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}}
 
 	r1 := &SupersetReconciler{Now: func() time.Time { return before }}
 	r2 := &SupersetReconciler{Now: func() time.Time { return after }}
@@ -1175,7 +1121,7 @@ func TestSeedInputs_ScheduleAndTrigger_BothContribute(t *testing.T) {
 	r := &SupersetReconciler{Now: func() time.Time { return now }}
 
 	cronExpr := "0 * * * *"
-	source := supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"}
+	source := supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}}
 	trigger1 := "v1"
 	trigger2 := "v2"
 
@@ -1203,7 +1149,7 @@ func TestSeedInputs_ScheduleAndTrigger_BothContribute(t *testing.T) {
 
 func TestSeedInputs_TargetImageChangesChecksum(t *testing.T) {
 	r := &SupersetReconciler{}
-	source := supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"}
+	source := supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}}
 
 	superset := &supersetv1alpha1.Superset{}
 	superset.Spec.Image = supersetv1alpha1.ImageSpec{Repository: "apache/superset", Tag: "6.1.0rc3-dev"}
@@ -1227,7 +1173,7 @@ func TestSeedInputs_NoSchedule_StableChecksum(t *testing.T) {
 	now := time.Date(2026, 5, 11, 14, 0, 0, 0, time.UTC)
 	r := &SupersetReconciler{Now: func() time.Time { return now }}
 
-	source := supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"}
+	source := supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}}
 	superset := &supersetv1alpha1.Superset{}
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 		Seed: &supersetv1alpha1.SeedTaskSpec{
@@ -1252,7 +1198,7 @@ func TestSeedInputs_ScheduleStableWithinWindow(t *testing.T) {
 	t2 := time.Date(2026, 5, 11, 14, 50, 0, 0, time.UTC)
 
 	cronExpr := "0 * * * *"
-	source := supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"}
+	source := supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}}
 
 	superset := &supersetv1alpha1.Superset{}
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
@@ -1278,7 +1224,7 @@ func TestPipelineChain_ScheduleTickPropagatesDownstream(t *testing.T) {
 	after := time.Date(2026, 5, 11, 2, 1, 0, 0, time.UTC)
 
 	cronExpr := "0 2 * * *"
-	source := supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"}
+	source := supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}}
 
 	superset := &supersetv1alpha1.Superset{}
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
@@ -1337,7 +1283,7 @@ func TestScheduleRequeue_ComputesCorrectDuration(t *testing.T) {
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 		Seed: &supersetv1alpha1.SeedTaskSpec{
 			CronSchedule: &cronExpr,
-			Source:       supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"},
+			Source:       supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}},
 		},
 	}
 
@@ -1355,7 +1301,7 @@ func TestScheduleRequeue_NoSchedule(t *testing.T) {
 	superset := &supersetv1alpha1.Superset{}
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 		Seed: &supersetv1alpha1.SeedTaskSpec{
-			Source: supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"},
+			Source: supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}},
 		},
 	}
 
@@ -1375,7 +1321,7 @@ func TestScheduleRequeue_DisabledSeed(t *testing.T) {
 		Seed: &supersetv1alpha1.SeedTaskSpec{
 			Disabled:     new(true),
 			CronSchedule: &cronExpr,
-			Source:       supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"},
+			Source:       supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}},
 		},
 	}
 
@@ -1465,7 +1411,7 @@ func TestAllTasksStillComplete_WithSeedSchedule(t *testing.T) {
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 		Seed: &supersetv1alpha1.SeedTaskSpec{
 			CronSchedule: &cronExpr,
-			Source:       supersetv1alpha1.SeedSourceSpec{Host: "prod-db", Database: "superset", Username: "reader"},
+			Source:       supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("prod-db"), Database: new("superset"), Username: new("reader")}},
 		},
 		Migrate: &supersetv1alpha1.MigrateTaskSpec{},
 		Init:    &supersetv1alpha1.InitTaskSpec{},
@@ -1745,7 +1691,7 @@ func TestIsTaskEnabled_InvalidCronScheduleGatesSeed(t *testing.T) {
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 		Seed: &supersetv1alpha1.SeedTaskSpec{
 			CronSchedule: &badExpr,
-			Source:       supersetv1alpha1.SeedSourceSpec{Host: "h", Database: "d", Username: "u"},
+			Source:       supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("h"), Database: new("d"), Username: new("u")}},
 		},
 	}
 
@@ -1776,14 +1722,12 @@ func TestCollectSeedEnvVars_ProductionDropsInlinePasswords(t *testing.T) {
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 		Seed: &supersetv1alpha1.SeedTaskSpec{
 			Source: supersetv1alpha1.SeedSourceSpec{
-				Host: "pg-prod.svc", Database: "d", Username: "u",
-				Password: new("inline-src"),
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-prod.svc"), Database: new("d"), Username: new("u"), Password: new("inline-src")},
 			},
 		},
 	}
 	superset.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-		Host: new("pg-staging.svc"), Database: new("d"), Username: new("u"),
-		Password: new("inline-target"),
+		Connection: &supersetv1alpha1.ConnectionSpec{Host: new("pg-staging.svc"), Database: new("d"), Username: new("u"), Password: new("inline-target")},
 	}
 
 	for _, e := range collectSeedEnvVars(superset) {
@@ -1804,7 +1748,7 @@ func TestGateOnSeedEnvironment(t *testing.T) {
 				Lifecycle: &supersetv1alpha1.LifecycleSpec{
 					Seed: &supersetv1alpha1.SeedTaskSpec{
 						Disabled: seedDisabled,
-						Source:   supersetv1alpha1.SeedSourceSpec{Host: "src"},
+						Source:   supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("src")}},
 					},
 				},
 			},
@@ -1856,10 +1800,11 @@ func TestSeed_UsesMetastoreDatabaseType(t *testing.T) {
 	mysqlType := supersetv1alpha1.DatabaseTypeMySQL
 	superset := &supersetv1alpha1.Superset{}
 	superset.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-		Type: &mysqlType, Host: new("mysql.svc"), Database: new("superset"), Username: new("superset"),
+		Type:       &mysqlType,
+		Connection: &supersetv1alpha1.ConnectionSpec{Host: new("mysql.svc"), Database: new("superset"), Username: new("superset")},
 	}
 	superset.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{Seed: &supersetv1alpha1.SeedTaskSpec{
-		Source: supersetv1alpha1.SeedSourceSpec{Host: "mysql-prod.svc", Database: "superset_prod", Username: "reader"},
+		Source: supersetv1alpha1.SeedSourceSpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("mysql-prod.svc"), Database: new("superset_prod"), Username: new("reader")}},
 	}}
 
 	if cmd := r.buildSeedCommand(superset); len(cmd) != 3 || !strings.Contains(cmd[2], "mysqldump") {

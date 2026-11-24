@@ -72,22 +72,15 @@ func TestReconcile_SecretsNeverLeakIntoConfigMaps(t *testing.T) {
 		spec := devLeakTestSpec(sentinelSecretKey)
 		spec.PreviousSecretKey = new(sentinelPrevKey)
 		spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-			Host:     new("postgres"),
-			Database: new("superset"),
-			Username: new("superset"),
-			Password: new(sentinelDBPass),
+			Connection: &supersetv1alpha1.ConnectionSpec{Host: new("postgres"), Database: new("superset"), Username: new("superset"), Password: new(sentinelDBPass)},
 		}
 		spec.Valkey = &supersetv1alpha1.ValkeySpec{
-			Host:     "valkey",
-			Password: new(sentinelValkey),
+			Connection: &supersetv1alpha1.ConnectionSpec{Host: new("valkey"), Password: new(sentinelValkey)},
 		}
 		spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 			Seed: &supersetv1alpha1.SeedTaskSpec{
 				Source: supersetv1alpha1.SeedSourceSpec{
-					Host:     "source-postgres",
-					Database: "superset_src",
-					Username: "reader",
-					Password: new(sentinelSeedPass),
+					Connection: &supersetv1alpha1.ConnectionSpec{Host: new("source-postgres"), Database: new("superset_src"), Username: new("reader"), Password: new(sentinelSeedPass)},
 				},
 			},
 			Rotate: &supersetv1alpha1.RotateTaskSpec{},
@@ -171,14 +164,10 @@ func TestReconcile_ProductionSecretRefsUseSecretKeyRef(t *testing.T) {
 	spec.SecretKeyFrom = &corev1.SecretKeySelector{Name: "app-secret", Key: "secret-key"}
 	spec.PreviousSecretKeyFrom = &corev1.SecretKeySelector{Name: "app-secret", Key: "previous-secret-key"}
 	spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-		Host:         new("postgres"),
-		Database:     new("superset"),
-		Username:     new("superset"),
-		PasswordFrom: &corev1.SecretKeySelector{Name: "db-secret", Key: "password"},
+		Connection: &supersetv1alpha1.ConnectionSpec{Host: new("postgres"), Database: new("superset"), Username: new("superset"), PasswordFrom: &corev1.SecretKeySelector{Name: "db-secret", Key: "password"}},
 	}
 	spec.Valkey = &supersetv1alpha1.ValkeySpec{
-		Host:         "valkey",
-		PasswordFrom: &corev1.SecretKeySelector{Name: "valkey-secret", Key: "password"},
+		Connection: &supersetv1alpha1.ConnectionSpec{Host: new("valkey"), PasswordFrom: &corev1.SecretKeySelector{Name: "valkey-secret", Key: "password"}},
 	}
 
 	superset := &supersetv1alpha1.Superset{

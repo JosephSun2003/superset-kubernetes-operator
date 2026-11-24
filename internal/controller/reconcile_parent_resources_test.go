@@ -49,13 +49,10 @@ func TestReconcile_CreatesParentOwnedComponentResources(t *testing.T) {
 		return &corev1.SecretKeySelector{Name: secretName, Key: key}
 	}
 	spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-		HostFrom: connectionRef("db-endpoint", "host"), PortFrom: connectionRef("db-endpoint", "port"),
-		DatabaseFrom: connectionRef("db-credentials", "dbname"), UsernameFrom: connectionRef("db-credentials", "user"),
-		PasswordFrom: connectionRef("db-credentials", "password"),
+		Connection: &supersetv1alpha1.ConnectionSpec{HostFrom: connectionRef("db-endpoint", "host"), PortFrom: connectionRef("db-endpoint", "port"), DatabaseFrom: connectionRef("db-credentials", "dbname"), UsernameFrom: connectionRef("db-credentials", "user"), PasswordFrom: connectionRef("db-credentials", "password")},
 	}
 	spec.Valkey = &supersetv1alpha1.ValkeySpec{
-		HostFrom: connectionRef("valkey-connection", "endpoint"), PortFrom: connectionRef("valkey-connection", "port"),
-		UsernameFrom: connectionRef("valkey-connection", "username"), PasswordFrom: connectionRef("valkey-connection", "password"),
+		Connection: &supersetv1alpha1.ConnectionSpec{HostFrom: connectionRef("valkey-connection", "endpoint"), PortFrom: connectionRef("valkey-connection", "port"), UsernameFrom: connectionRef("valkey-connection", "username"), PasswordFrom: connectionRef("valkey-connection", "password")},
 	}
 
 	superset := &supersetv1alpha1.Superset{

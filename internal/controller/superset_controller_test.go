@@ -100,8 +100,8 @@ var _ = Describe("Integration", Ordered, func() {
 		It("should reject invalid metastore type enum value", func() {
 			cr := newSuperset("type-enum", ns)
 			cr.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-				Host: new("db.example.com"),
-				Type: new(supersetv1alpha1.DatabaseType("sqlite")),
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("db.example.com")},
+				Type:       new(supersetv1alpha1.DatabaseType("sqlite")),
 			}
 			err := k8sClient.Create(ctx, cr)
 			Expect(err).To(HaveOccurred())
@@ -124,8 +124,7 @@ var _ = Describe("Integration", Ordered, func() {
 				URI: new("postgresql+psycopg2://u:p@host/db"),
 			}
 			cr.Spec.Valkey = &supersetv1alpha1.ValkeySpec{
-				Host:     "valkey",
-				Password: new("dev-pass"),
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("valkey"), Password: new("dev-pass")},
 			}
 			cr.Spec.WebServer = &supersetv1alpha1.WebServerComponentSpec{}
 			Expect(k8sClient.Create(ctx, cr)).To(Succeed())
@@ -164,8 +163,8 @@ var _ = Describe("Integration", Ordered, func() {
 		It("should reject mutually exclusive metastore fields", func() {
 			cr := newSuperset("meta-exclusive", ns)
 			cr.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-				URI:  new("postgresql+psycopg2://u:p@host/db"),
-				Host: new("host"),
+				URI:        new("postgresql+psycopg2://u:p@host/db"),
+				Connection: &supersetv1alpha1.ConnectionSpec{Host: new("host")},
 			}
 			err := k8sClient.Create(ctx, cr)
 			Expect(err).To(HaveOccurred())

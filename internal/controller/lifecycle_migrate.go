@@ -56,20 +56,22 @@ func (r *SupersetReconciler) migrateInputs(superset *supersetv1alpha1.Superset) 
 		createDatabase = true
 		m := superset.Spec.Metastore
 		target.Type = derefOrDefault(m.Type, supersetv1alpha1.DatabaseTypePostgreSQL)
-		target.Host = derefOrDefault(m.Host, "")
 		target.Port = defaultDBPort(m.Type)
-		if m.Port != nil {
-			target.Port = *m.Port
-		}
-		target.Database = derefOrDefault(m.Database, "")
-		target.Username = derefOrDefault(m.Username, "")
-		if m.HostFrom != nil || m.PortFrom != nil || m.DatabaseFrom != nil || m.UsernameFrom != nil {
-			target.SelectorRefHash = computeChecksum(struct {
-				Host     any
-				Port     any
-				Database any
-				Username any
-			}{m.HostFrom, m.PortFrom, m.DatabaseFrom, m.UsernameFrom})
+		if m.Connection != nil {
+			target.Host = derefOrDefault(m.Connection.Host, "")
+			if m.Connection.Port != nil {
+				target.Port = *m.Connection.Port
+			}
+			target.Database = derefOrDefault(m.Connection.Database, "")
+			target.Username = derefOrDefault(m.Connection.Username, "")
+			if m.Connection.HostFrom != nil || m.Connection.PortFrom != nil || m.Connection.DatabaseFrom != nil || m.Connection.UsernameFrom != nil {
+				target.SelectorRefHash = computeChecksum(struct {
+					Host     any
+					Port     any
+					Database any
+					Username any
+				}{m.Connection.HostFrom, m.Connection.PortFrom, m.Connection.DatabaseFrom, m.Connection.UsernameFrom})
+			}
 		}
 		initContainerScript = createDatabasePostgresScript
 		if target.Type == supersetv1alpha1.DatabaseTypeMySQL {

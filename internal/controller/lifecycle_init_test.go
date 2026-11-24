@@ -41,13 +41,10 @@ func TestInitInputs_ChangesWithRenderedConfig(t *testing.T) {
 		s.Spec.Image = supersetv1alpha1.ImageSpec{Tag: "4.1.4"}
 		s.Spec.SecretKeyFrom = secretKeyRef("secret", "key")
 		s.Spec.Metastore = &supersetv1alpha1.MetastoreSpec{
-			Host:         new("db.svc"),
-			Database:     new("superset"),
-			Username:     new("superset"),
-			PasswordFrom: secretKeyRef("db-secret", "password"),
+			Connection: &supersetv1alpha1.ConnectionSpec{Host: new("db.svc"), Database: new("superset"), Username: new("superset"), PasswordFrom: secretKeyRef("db-secret", "password")},
 		}
 		// Valkey exercises Celery connectivity rendering in the lifecycle config.
-		s.Spec.Valkey = &supersetv1alpha1.ValkeySpec{Host: "valkey.svc"}
+		s.Spec.Valkey = &supersetv1alpha1.ValkeySpec{Connection: &supersetv1alpha1.ConnectionSpec{Host: new("valkey.svc")}}
 		s.Spec.Lifecycle = &supersetv1alpha1.LifecycleSpec{
 			Init: &supersetv1alpha1.InitTaskSpec{},
 		}
@@ -101,19 +98,19 @@ func TestInitInputs_ChangesWithRenderedConfig(t *testing.T) {
 		{
 			name: "metastore.host",
 			mutate: func(s *supersetv1alpha1.Superset) {
-				s.Spec.Metastore.Host = new("db-2.svc")
+				s.Spec.Metastore.Connection.Host = new("db-2.svc")
 			},
 		},
 		{
 			name: "metastore.database",
 			mutate: func(s *supersetv1alpha1.Superset) {
-				s.Spec.Metastore.Database = new("superset_v2")
+				s.Spec.Metastore.Connection.Database = new("superset_v2")
 			},
 		},
 		{
 			name: "metastore.passwordFrom (different ref)",
 			mutate: func(s *supersetv1alpha1.Superset) {
-				s.Spec.Metastore.PasswordFrom = secretKeyRef("rotated-db-secret", "password")
+				s.Spec.Metastore.Connection.PasswordFrom = secretKeyRef("rotated-db-secret", "password")
 			},
 		},
 		{
@@ -131,7 +128,7 @@ func TestInitInputs_ChangesWithRenderedConfig(t *testing.T) {
 		{
 			name: "valkey.host",
 			mutate: func(s *supersetv1alpha1.Superset) {
-				s.Spec.Valkey.Host = "valkey-2.svc"
+				s.Spec.Valkey.Connection.Host = new("valkey-2.svc")
 			},
 		},
 		{

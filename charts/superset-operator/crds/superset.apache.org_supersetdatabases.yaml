@@ -1,0 +1,287 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.23.0
+  name: supersetdatabases.superset.apache.org
+spec:
+  group: superset.apache.org
+  names:
+    kind: SupersetDatabase
+    listKind: SupersetDatabaseList
+    plural: supersetdatabases
+    singular: supersetdatabase
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              deletion:
+                enum:
+                - 0
+                - 1
+                type: integer
+              dml:
+                type: boolean
+              dmlFrom:
+                properties:
+                  key:
+                    type: string
+                  name:
+                    default: ""
+                    type: string
+                  optional:
+                    type: boolean
+                required:
+                - key
+                type: object
+                x-kubernetes-map-type: atomic
+              encryptedExtra:
+                type: string
+              encryptedExtraFrom:
+                properties:
+                  key:
+                    type: string
+                  name:
+                    default: ""
+                    type: string
+                  optional:
+                    type: boolean
+                required:
+                - key
+                type: object
+                x-kubernetes-map-type: atomic
+              engine:
+                type: string
+              exposeInSqlLab:
+                type: boolean
+              exposeInSqlLabFrom:
+                properties:
+                  key:
+                    type: string
+                  name:
+                    default: ""
+                    type: string
+                  optional:
+                    type: boolean
+                required:
+                - key
+                type: object
+                x-kubernetes-map-type: atomic
+              hpup:
+                properties:
+                  database:
+                    minLength: 1
+                    type: string
+                  databaseFrom:
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        default: ""
+                        type: string
+                      optional:
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  host:
+                    minLength: 1
+                    type: string
+                  hostFrom:
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        default: ""
+                        type: string
+                      optional:
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  password:
+                    type: string
+                  passwordFrom:
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        default: ""
+                        type: string
+                      optional:
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  port:
+                    format: int32
+                    type: integer
+                  portFrom:
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        default: ""
+                        type: string
+                      optional:
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  username:
+                    minLength: 1
+                    type: string
+                  usernameFrom:
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        default: ""
+                        type: string
+                      optional:
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
+                type: object
+                x-kubernetes-validations:
+                - message: host and hostFrom are mutually exclusive
+                  rule: '!(has(self.host) && has(self.hostFrom))'
+                - message: port and portFrom are mutually exclusive
+                  rule: '!(has(self.port) && has(self.portFrom))'
+                - message: database and databaseFrom are mutually exclusive
+                  rule: '!(has(self.database) && has(self.databaseFrom))'
+                - message: username and usernameFrom are mutually exclusive
+                  rule: '!(has(self.username) && has(self.usernameFrom))'
+                - message: password and passwordFrom are mutually exclusive
+                  rule: '!(has(self.password) && has(self.passwordFrom))'
+                - message: structured fields require host or hostFrom to be set
+                  rule: '!((has(self.database) || has(self.databaseFrom) || has(self.username)
+                    || has(self.usernameFrom) || has(self.password) || has(self.passwordFrom)
+                    || has(self.port) || has(self.portFrom)) && !(has(self.host) ||
+                    has(self.hostFrom)))'
+              impersonate:
+                type: boolean
+              impersonateFrom:
+                properties:
+                  key:
+                    type: string
+                  name:
+                    default: ""
+                    type: string
+                  optional:
+                    type: boolean
+                required:
+                - key
+                type: object
+                x-kubernetes-map-type: atomic
+              name:
+                type: string
+              ref:
+                properties:
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
+              sshTunnel:
+                type: string
+              sshTunnelFrom:
+                properties:
+                  key:
+                    type: string
+                  name:
+                    default: ""
+                    type: string
+                  optional:
+                    type: boolean
+                required:
+                - key
+                type: object
+                x-kubernetes-map-type: atomic
+              upload:
+                type: boolean
+              uploadFrom:
+                properties:
+                  key:
+                    type: string
+                  name:
+                    default: ""
+                    type: string
+                  optional:
+                    type: boolean
+                required:
+                - key
+                type: object
+                x-kubernetes-map-type: atomic
+              uuid:
+                type: string
+            required:
+            - name
+            - ref
+            type: object
+          status:
+            properties:
+              conditions:
+                items:
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              externalManagement:
+                type: boolean
+              externalUrl:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
